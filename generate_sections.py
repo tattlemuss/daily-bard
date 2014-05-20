@@ -1,5 +1,6 @@
 import csv
 import sys
+import os
 
 class FormatLine:
     def __init__(self, text, is_start=False):
@@ -80,7 +81,7 @@ def format_play(play_paras, play_acts):
                 
             # Stage direction
             if row.character() == 'xxx':
-                formatted_lines.append(FormatLine("{0: <20} {1}".format('', dialog), True))
+                formatted_lines.append(FormatLine("{0: <10} {1}".format('', dialog), True))
             else:
                 # Speech
                 # Look up character name
@@ -88,7 +89,7 @@ def format_play(play_paras, play_acts):
                 dlines = dialog.split('[p]')
                 for d in dlines:
                     d = d.rstrip()
-                    formatted_lines.append(FormatLine("{0: <20} {1: <60} {2}".format(character, d, ln)))
+                    formatted_lines.append(FormatLine("{0: <10} {1: <80} {2}".format(character, d, ln)))
                     character = ''
                     ln += 1
 
@@ -114,14 +115,12 @@ def generate_play(playcode, output_path):
     # Simplest possible atm
     base = 0
     chunk_id = 1
-    chunk_size = 75
+    chunk_size = 50
     while base < len(formatted_lines):
-        end = base + 75
-        # Find the end
-        
-        text = [x.text for x in formatted_lines[base:base + chunk_size]]
 
-        import os
+        end = base + chunk_size + 10 # add 10 lines of overlap for next time...
+        text = [x.text for x in formatted_lines[base:end]]
+
         filename = "section_%d.html" % (chunk_id)
         fh = open(os.path.join(output_path, filename), 'w')
         fh.write('\n'.join(text))
