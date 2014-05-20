@@ -9,8 +9,8 @@ post_tmpl = """
         <title>{{title}}</title>
         <author><name>{{site.author}}</name></author>
         <link href="{{full_url}}"/>
-        <published>{{created|xmldatetime}}</published>
-        <updated>{{created|xmldatetime}}</updated>
+        <published>{{postdate}}</published>
+        <updated>{{postdate}}</updated>
         <id>{{full_url}}</id>
         <content type="html">
 <![CDATA[<pre>{{content}}</pre>]]>
@@ -21,7 +21,19 @@ post_tmpl = """
 footer_tmpl = """
 </feed>"""
 
+import datetime, os
+
+def rfcformat(fmt_date):
+    """ Hack a string matching a convincing date 
+    of the format https://tools.ietf.org/html/rfc3339 """
+    suffix = "T00:00:00Z"
+    return fmt_date.strftime("%Y-%m-%d") + suffix
+    
 def expand_template(tmpl_text, values):
+    """ Simplest template expander.
+    Matches {{TAG}} and replaces with TAG as a key in the
+    supplied values dictionary. """
+    
     import re
     search_re = re.compile("{{(.*)}}")
     def replace_func(matchobj):
@@ -32,17 +44,29 @@ def expand_template(tmpl_text, values):
     output = re.sub(search_re, replace_func, tmpl_text)
     return output
 
-def generate(load_path, offset, output_path):
-    # Scan for number of items
-    import os, fnmatch
+def generate(load_path, output_path, title, base_day, today):
+    # Work out how far from "today" we are
+    td = today - base_day
+    day_delta = td.days
+    
+    # Scan the sections directory for number of sections
+    # the play is made from
+    import fnmatch
     all_files = []
     files = os.listdir(load_path)
+    
+    # TODO: just use count
     for f in fnmatch.filter(files, '*.html'):
         all_files.append(f)
 
     final = header_tmpl
     module_count = len(all_files)
+    
+    # Modulize the day offset
+    offset = day_delta % module_count    
+    
     curr = offset
+    # "curr" counts down backwards in time
     while curr >= 0 and curr > offset - 10:
         chunk_id = curr
         fname = "section_%d.html" % (chunk_id + 1)
@@ -50,12 +74,16 @@ def generate(load_path, offset, output_path):
         fh = open(os.path.join(load_path, fname))
         section = '<br/>'.join(fh.readlines())
         fh.close()
+        
+        # Generate a date N days back
+        date_offset = datetime.timedelta(offset - curr)
+        final_post_date = today - date_offset
 
         values = { "content" : section,
                    "site.author" : "Shakespeare, William",
-                   "title" : "Section %d" % chunk_id,
-                   "full_url" : "http://clarets.org",
-                   "created|xmldatetime" : "2014-02-15T09:00:00Z"   }
+                   "title" : "%s: %d of %d" % (title, chunk_id, module_count),
+                   "full_url" : "http://clarets.org/daily-bard",
+                   "postdate" : rfcformat(final_post_date) }
         final += expand_template(post_tmpl, values)
         curr -= 1
 
@@ -67,6 +95,11 @@ def generate(load_path, offset, output_path):
 
 if __name__ == '__main__':
     # Generate the last 10 posts
-    generate('sections/kinglear', 2, 'atom_kinglear.xml')
+    base_day = datetime.date(2014, 05, 10)
+    today = datetime.date.today()
+    import sys
+    (section_path, atom_output_path, title) = sys.argv[1:4]
+    
+    generate(section_path, atom_output_path, title, base_day, today)
 
 
