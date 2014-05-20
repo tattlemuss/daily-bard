@@ -1,23 +1,19 @@
 header_tmpl = """<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
- <title>$$TITLE/$</title>
-    <link href="{{page.node.full_url}}/atom.xml" rel="self"/>
-    <link href="{{site.full_url}}"/>
- <updated>{{now|xmldatetime}}</updated>
+ <title>The Daily Bard</title>
  <id>{{site.full_url}}</id>
 """
 
 post_tmpl = """
         <entry>
-        <title>{{node_page.title}}</title>
+        <title>{{title}}</title>
         <author><name>{{site.author}}</name></author>
-        <link href="{{node_page.full_url}}"/>
-        <updated>{{node_page.updated|default:node_page.created|xmldatetime}}</updated>
-        <published>{{node_page.created|xmldatetime}}</published>
-        <id>{{node_page.full_url}}</id>
-        {%block entry_extra%}{%endblock%}
+        <link href="{{full_url}}"/>
+        <published>{{created|xmldatetime}}</published>
+        <updated>{{created|xmldatetime}}</updated>
+        <id>{{full_url}}</id>
         <content type="html">
-            {%filter force_escape%}{% render_article node_page %}{%endfilter%}
+<![CDATA[<pre>{{content}}</pre>]]>
         </content>
         </entry>
 """
@@ -25,6 +21,16 @@ post_tmpl = """
 footer_tmpl = """
 </feed>"""
 
+def expand_template(tmpl_text, values):
+    import re
+    search_re = re.compile("{{(.*)}}")
+    def replace_func(matchobj):
+        key = matchobj.group(1)
+        if values.has_key(key):
+            return values[key]
+        return "MISSING"
+    output = re.sub(search_re, replace_func, tmpl_text)
+    return output
 
 def generate(load_path, offset, output_path):
     # Scan for number of items
@@ -40,11 +46,17 @@ def generate(load_path, offset, output_path):
     while curr >= 0 and curr > offset - 10:
         chunk_id = curr
         fname = "section_%d.html" % (chunk_id + 1)
+
         fh = open(os.path.join(load_path, fname))
-        
-        section = ''.join(fh.readlines())
+        section = '<br/>'.join(fh.readlines())
         fh.close()
-        final += section
+
+        values = { "content" : section,
+                   "site.author" : "Shakespeare, William",
+                   "title" : "Section %d" % chunk_id,
+                   "full_url" : "http://clarets.org",
+                   "created|xmldatetime" : "2014-02-15T09:00:00Z"   }
+        final += expand_template(post_tmpl, values)
         curr -= 1
 
     final += footer_tmpl
@@ -55,6 +67,6 @@ def generate(load_path, offset, output_path):
 
 if __name__ == '__main__':
     # Generate the last 10 posts
-    generate('12night', 2, 'atom.xml')
+    generate('sections/kinglear', 2, 'atom_kinglear.xml')
 
 
