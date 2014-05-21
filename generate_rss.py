@@ -1,7 +1,7 @@
 header_tmpl = """<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
- <title>The Daily Bard</title>
- <id>{{site.full_url}}</id>
+ <title>The Daily Bard: {{play}}</title>
+ <id>{{url}}</id>
 """
 
 post_tmpl = """
@@ -20,6 +20,8 @@ post_tmpl = """
 
 footer_tmpl = """
 </feed>"""
+
+WEBSITE_BASE="http://www.clarets.org/daily-bard/"
 
 import datetime, os
 import pickle
@@ -53,24 +55,27 @@ def generate(load_path, output_path, title, base_day, today):
     # Scan the sections directory for number of sections
     # the play is made from
     import fnmatch
+    # TODO: just use count
     all_files = []
     files = os.listdir(load_path)
-    
-    # TODO: just use count
     for f in fnmatch.filter(files, '*.pck'):
         all_files.append(f)
 
-    final = header_tmpl
-    module_count = len(all_files)
+    values = { 
+                "play" : title,
+                "url" : WEBSITE_BASE
+            }
+    final = expand_template(header_tmpl, values)
+    section_count = len(all_files)
     
-    # Modulize the day offset
-    offset = day_delta % module_count    
-    
+    # Modulo the day offset
+    offset = day_delta % section_count
     curr = offset
+
     # "curr" counts down backwards in time
     while curr >= 0 and curr > offset - 10:
-        chunk_id = curr
-        fname = "section_%d.pck" % (chunk_id + 1)
+        readable_id = curr + 1
+        fname = "section_%d.pck" % (readable_id)
 
         fh = open(os.path.join(load_path, fname), "rb")
         values = pickle.load(fh)
@@ -85,7 +90,7 @@ def generate(load_path, output_path, title, base_day, today):
         final_post_date = today - date_offset
         
         url = "http://mobile.opensourceshakespeare.org/play_view.php?WorkID=%s#%d" % (playcode, line_id)
-        url_title = "%s (%d/%d)" % (title, chunk_id + 1, module_count)
+        url_title = "%s (%d/%d)" % (title, readable_id, section_count)
         values = { "content" : section,
                    "site.author" : "Shakespeare, William",
                    "title" : url_title,

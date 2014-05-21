@@ -90,7 +90,7 @@ def format_play(play_paras, play_acts):
             if row.character() == 'xxx':
                 # Stage direction
                 # Split into chunks?
-                formatted_lines.append(FormatLine("<br/><center>[{}]</center><br/>".format(dialog), ln, True))
+                formatted_lines.append(FormatLine("<br/><center><em>{}</em></center><br/>".format(dialog), ln, True))
             else:
                 # Speech
                 # Look up character name
@@ -110,7 +110,7 @@ def format_play(play_paras, play_acts):
 
     return formatted_lines
 
-def generate_play(playcode, output_path):
+def generate_play(playcode, output_path, oss_path):
     def is_x(a):
         if a.play() == playcode:
             return True
@@ -148,15 +148,17 @@ def generate_play(playcode, output_path):
         chunk_id += 1
 
             
-paras = read_into_array('oss/Paragraphs.txt', Para)
-chars = read_into_array('oss/Characters.txt', Character)
-acts = read_into_array('oss/Chapters.txt', Chapter)
-char_dict = hash_array(chars)
-char_dict['xxx'] = ''
-
 if __name__ == '__main__':
     import sys
     playcode = sys.argv[1]
     output_path = sys.argv[2]
-    generate_play(playcode, output_path)
+    oss_path = sys.argv[3]
+
+    paras = read_into_array(os.path.join(oss_path, 'Paragraphs.txt'), Para)
+    chars = read_into_array(os.path.join(oss_path, 'Characters.txt'), Character)
+    acts = read_into_array( os.path.join(oss_path, 'Chapters.txt'),   Chapter)
+    char_dict = hash_array(chars)
+    char_dict['xxx'] = ''
+
+    generate_play(playcode, output_path, oss_path)
     
