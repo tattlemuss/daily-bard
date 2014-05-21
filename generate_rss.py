@@ -13,7 +13,7 @@ post_tmpl = """
         <updated>{{postdate}}</updated>
         <id>{{full_url}}</id>
         <content type="html">
-<![CDATA[<pre>{{content}}</pre>]]>
+<![CDATA[{{content}}]]>
         </content>
         </entry>
 """
@@ -22,6 +22,7 @@ footer_tmpl = """
 </feed>"""
 
 import datetime, os
+import pickle
 
 def rfcformat(fmt_date):
     """ Hack a string matching a convincing date 
@@ -56,7 +57,7 @@ def generate(load_path, output_path, title, base_day, today):
     files = os.listdir(load_path)
     
     # TODO: just use count
-    for f in fnmatch.filter(files, '*.html'):
+    for f in fnmatch.filter(files, '*.pck'):
         all_files.append(f)
 
     final = header_tmpl
@@ -69,20 +70,26 @@ def generate(load_path, output_path, title, base_day, today):
     # "curr" counts down backwards in time
     while curr >= 0 and curr > offset - 10:
         chunk_id = curr
-        fname = "section_%d.html" % (chunk_id + 1)
+        fname = "section_%d.pck" % (chunk_id + 1)
 
-        fh = open(os.path.join(load_path, fname))
-        section = '<br/>'.join(fh.readlines())
+        fh = open(os.path.join(load_path, fname), "rb")
+        values = pickle.load(fh)
         fh.close()
         
+        section = ''.join(values['text'])
+        line_id = values['line_id']
+        playcode = values['playcode']
+
         # Generate a date N days back
         date_offset = datetime.timedelta(offset - curr)
         final_post_date = today - date_offset
-
+        
+        url = "http://mobile.opensourceshakespeare.org/play_view.php?WorkID=%s#%d" % (playcode, line_id)
+        url_title = "%s (%d/%d)" % (title, chunk_id + 1, module_count)
         values = { "content" : section,
                    "site.author" : "Shakespeare, William",
-                   "title" : "%s: %d of %d" % (title, chunk_id, module_count),
-                   "full_url" : "http://clarets.org/daily-bard",
+                   "title" : url_title,
+                   "full_url" : url,
                    "postdate" : rfcformat(final_post_date) }
         final += expand_template(post_tmpl, values)
         curr -= 1
@@ -95,7 +102,7 @@ def generate(load_path, output_path, title, base_day, today):
 
 if __name__ == '__main__':
     # Generate the last 10 posts
-    base_day = datetime.date(2014, 05, 10)
+    base_day = datetime.date(2014, 05, 21)
     today = datetime.date.today()
     import sys
     (section_path, atom_output_path, title) = sys.argv[1:4]
