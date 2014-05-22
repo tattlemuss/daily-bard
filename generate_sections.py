@@ -45,6 +45,18 @@ class Chapter:
     def value(self):
         return self.row[4]
         
+class Play:
+    def __init__(self, row):
+        self.row = row
+    def key(self):
+        return self.row[0]
+    def value(self):
+        return self
+    def short_title(self):
+        return self.row[1]
+    def full_title(self):
+        return self.row[2]
+                
 def hash_array(array):
     res = {}
     for row in array:
@@ -59,7 +71,15 @@ def read_into_array(filename, classname):
         array.append(classname(row))
     fh.close()
     return array
+
+OSS_URL="http://www.opensourceshakespeare.org" 
+
+def generate_line_link(playcode, line_id, text):
+    return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}#{2}\">{3}</a>".format(OSS_URL, playcode, line_id, text)
     
+def generate_character_link(playcode, character_id, text):
+    return "<a href=\"{0}/views/plays/characters/charlines.php?CharID={1}&WorkID={2}\">{3}</a>".format(OSS_URL, character_id, playcode, text)
+
 def format_play(play_paras, play_acts):
     chapter_dict = hash_array(play_acts)
     formatted_lines = []
@@ -94,8 +114,12 @@ def format_play(play_paras, play_acts):
             else:
                 # Speech
                 # Look up character name
-                character = char_dict[row.character()]
-                formatted_lines.append(FormatLine("<b>{0}</b>:<br/>".format(character), ln, True))
+                char_id = row.character()
+                char_fullname = char_dict[char_id]
+                char_text = generate_character_link(playcode, char_id, char_fullname)
+
+                anchor_link = generate_line_link(playcode, ln, "&gt;")
+                formatted_lines.append(FormatLine("<b>{0}</b>: {1}<br/>".format(char_text, anchor_link), ln, True))
 
                 # Text
                 dlines = dialog.split('[p]')
@@ -110,23 +134,25 @@ def format_play(play_paras, play_acts):
 
     return formatted_lines
 
-def generate_play(playcode, output_path, oss_path):
+def generate_play(our_play, playcode, output_path, oss_path):
     def is_x(a):
         if a.play() == playcode:
             return True
         return False
         
     # Filter to 12th Night
-    para12 = filter(is_x, paras)
-    acts12 = filter(is_x, acts)
+    paras_in_play = filter(is_x, paras)
+    acts_in_play = filter(is_x, acts)
 
-    formatted_lines = format_play(para12, acts12)
+    formatted_lines = format_play(paras_in_play, acts_in_play)
 
     # Split into chunks of N lines
     # Simplest possible atm
     base = 0
-    chunk_id = 1
+    readable_id = 1
     chunk_size = 50
+    play_title = our_play.short_title()
+    section_count = len(formatted_lines) / chunk_size
     while base < len(formatted_lines):
 
         end = base + chunk_size + 10 # add 10 lines of overlap for next time...
@@ -135,17 +161,23 @@ def generate_play(playcode, output_path, oss_path):
 
         # Generate pickle data
         line_id = formatted_lines[base].line_number
+
+        url = "http://www.opensourceshakespeare.org/views/plays/play_view.php?WorkID=%s#%d" % (playcode, line_id)
+        url_title = "%s (%d/%d)" % (play_title, readable_id, section_count)
+
         page_data = { "playcode" : playcode,
                       "line_id" : line_id,
-                      "text" : final_text
+                      "text" : final_text,
+                      "url" : url,
+                      "title" : url_title
                       }
-        pickle_filename = "section_%d.pck" % (chunk_id)
+        pickle_filename = "section_%d.pck" % (readable_id)
         pickle_fh = open(os.path.join(output_path, pickle_filename), 'wb')
         pickle_dump = pickle.dump(page_data, pickle_fh, 0)
         pickle_fh.close()
         
         base += chunk_size
-        chunk_id += 1
+        readable_id += 1
 
             
 if __name__ == '__main__':
@@ -157,8 +189,12 @@ if __name__ == '__main__':
     paras = read_into_array(os.path.join(oss_path, 'Paragraphs.txt'), Para)
     chars = read_into_array(os.path.join(oss_path, 'Characters.txt'), Character)
     acts = read_into_array( os.path.join(oss_path, 'Chapters.txt'),   Chapter)
+    plays = read_into_array(os.path.join(oss_path, 'Works.txt'),     Play)
+
     char_dict = hash_array(chars)
     char_dict['xxx'] = ''
 
-    generate_play(playcode, output_path, oss_path)
+    play_dict = hash_array(plays)
+    our_play = play_dict[playcode]
+    generate_play(our_play, playcode, output_path, oss_path)
     

@@ -88,13 +88,10 @@ def generate(load_path, output_path, title, base_day, today):
         # Generate a date N days back
         date_offset = datetime.timedelta(offset - curr)
         final_post_date = today - date_offset
-        
-        url = "http://mobile.opensourceshakespeare.org/play_view.php?WorkID=%s#%d" % (playcode, line_id)
-        url_title = "%s (%d/%d)" % (title, readable_id, section_count)
         values = { "content" : section,
                    "site.author" : "Shakespeare, William",
-                   "title" : url_title,
-                   "full_url" : url,
+                   "title" : values['title'],
+                   "full_url" : values['url'],
                    "postdate" : rfcformat(final_post_date) }
         final += expand_template(post_tmpl, values)
         curr -= 1
@@ -111,7 +108,6 @@ if __name__ == '__main__':
     today = datetime.date.today()
     import sys
     (section_path, atom_output_path, title) = sys.argv[1:4]
-    
     generate(section_path, atom_output_path, title, base_day, today)
 
 
