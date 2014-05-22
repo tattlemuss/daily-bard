@@ -9,11 +9,12 @@ import os
 import pickle
 
 class FormatLine:
-    def __init__(self, text, ln, is_start=False):
+    def __init__(self, text, ln, is_end=False):
         self.text = text
         self.score = 0
         self.line_number = ln
-        self.is_start = is_start
+        self.is_end = is_end
+        self.character_id = None
 
 class NormalLine:
     def __init__(self, row):
@@ -74,6 +75,10 @@ def read_into_array(filename, classname):
 
 OSS_URL="http://www.opensourceshakespeare.org" 
 
+def generate_site_link(playcode):
+    text = "Text from Open Source Shakespeare";
+    return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}\">{2}</a>".format(OSS_URL, playcode, text)
+
 def generate_line_link(playcode, line_id, text):
     return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}#{2}\">{3}</a>".format(OSS_URL, playcode, line_id, text)
     
@@ -96,21 +101,18 @@ def format_play(play_paras, play_acts):
             dialog = row.row[4]
             act = row.row[8]
             scene = row.row[9]
-            if act != last_act:
+            if act != last_act or scene != last_scene:
                 # "ACT"
-                # Insert this chapter
-                formatted_lines.append(FormatLine("<center><b>{0}</b></center><br/>".format("ACT " + act), ln, True))
-            if scene != last_scene:
                 # "SCENE"
                 # Insert this chapter
-                formatted_lines.append(FormatLine("<center><b>{0}</b></center><br/>".format("SCENE " + scene), ln, True))
+                formatted_lines.append(FormatLine("<center><b>ACT {0}, SCENE {1}</b></center><br/>".format(act, scene), ln))
                 desc = chapter_dict[ (act, scene) ]
-                formatted_lines.append(FormatLine("<center><b>{0}</b></center><br/>".format(desc), ln, True))
+                formatted_lines.append(FormatLine("<center><b>{0}</b></center><br/>".format(desc), ln))
                 
             if row.character() == 'xxx':
                 # Stage direction
                 # Split into chunks?
-                formatted_lines.append(FormatLine("<br/><center><em>{}</em></center><br/>".format(dialog), ln, True))
+                formatted_lines.append(FormatLine("<br/><center><em>{}</em></center><br/>".format(dialog), ln))
             else:
                 # Speech
                 # Look up character name
@@ -119,19 +121,20 @@ def format_play(play_paras, play_acts):
                 char_text = generate_character_link(playcode, char_id, char_fullname)
 
                 anchor_link = generate_line_link(playcode, ln, "&gt;")
-                formatted_lines.append(FormatLine("<b>{0}</b>: {1}<br/>".format(char_text, anchor_link), ln, True))
+                formatted_lines.append(FormatLine("<b>{0}</b>: {1}<br/>".format(char_text, anchor_link), ln))
 
                 # Text
                 dlines = dialog.split('[p]')
                 for d in dlines:
                     d = d.rstrip()
-                    formatted_lines.append(FormatLine("{0}<br/>".format(d), ln, True))
+                    formatted_lines.append(FormatLine("{0}<br/>".format(d), ln, False))
                     ln += 1
 
+                # Mark the last line of dialog as "is_end"
                 formatted_lines.append(FormatLine('<br/>', ln))
+                formatted_lines[-1].is_end = True
             last_act = act
             last_scene = scene
-
     return formatted_lines
 
 def generate_play(our_play, playcode, output_path, oss_path):
@@ -146,39 +149,56 @@ def generate_play(our_play, playcode, output_path, oss_path):
 
     formatted_lines = format_play(paras_in_play, acts_in_play)
 
+    # Pickle the play details
+    #pickle_filename = "play.play"
+    #pickle_fh = open(os.path.join(output_path, pickle_filename), 'wb')
+    #pickle_dump = pickle.dump(page_data, pickle_fh, 0)
+    #pickle_fh.close()
+    
     # Split into chunks of N lines
     # Simplest possible atm
     base = 0
     readable_id = 1
-    chunk_size = 50
+    chunk_size = 75
+    chunk_overlap = 20
     play_title = our_play.short_title()
     section_count = len(formatted_lines) / chunk_size
-    while base < len(formatted_lines):
-
-        end = base + chunk_size + 10 # add 10 lines of overlap for next time...
+    line_count = len(formatted_lines)
+    while base < line_count:
+        # Scan down to find next "end"
+        check = base + chunk_size
+        end_range = min(base + chunk_size + chunk_overlap, line_count)
+        while check < end_range:
+            if formatted_lines[check].is_end:
+                break
+            check += 1
+                
+        end = check
         text = [x.text for x in formatted_lines[base:end]]
+
         final_text = '\n'.join(text)
+        final_text += generate_site_link(playcode)
 
         # Generate pickle data
         line_id = formatted_lines[base].line_number
 
         url = "http://www.opensourceshakespeare.org/views/plays/play_view.php?WorkID=%s#%d" % (playcode, line_id)
         url_title = "%s (%d/%d)" % (play_title, readable_id, section_count)
-
+        
         page_data = { "playcode" : playcode,
                       "line_id" : line_id,
                       "text" : final_text,
                       "url" : url,
                       "title" : url_title
                       }
-        pickle_filename = "section_%d.pck" % (readable_id)
+        pickle_filename = "section_%d.sect" % (readable_id)
         pickle_fh = open(os.path.join(output_path, pickle_filename), 'wb')
         pickle_dump = pickle.dump(page_data, pickle_fh, 0)
         pickle_fh.close()
         
-        base += chunk_size
+        # Move on to next, giving a little overlap
+        base = end + 1
         readable_id += 1
-
             
 if __name__ == '__main__':
     import sys

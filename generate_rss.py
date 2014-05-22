@@ -13,7 +13,8 @@ post_tmpl = """
         <updated>{{postdate}}</updated>
         <id>{{full_url}}</id>
         <content type="html">
-<![CDATA[{{content}}]]>
+<![CDATA[{{content}}
+        ]]>
         </content>
         </entry>
 """
@@ -58,7 +59,7 @@ def generate(load_path, output_path, title, base_day, today):
     # TODO: just use count
     all_files = []
     files = os.listdir(load_path)
-    for f in fnmatch.filter(files, '*.pck'):
+    for f in fnmatch.filter(files, '*.sect'):
         all_files.append(f)
 
     values = { 
@@ -75,7 +76,7 @@ def generate(load_path, output_path, title, base_day, today):
     # "curr" counts down backwards in time
     while curr >= 0 and curr > offset - 10:
         readable_id = curr + 1
-        fname = "section_%d.pck" % (readable_id)
+        fname = "section_%d.sect" % (readable_id)
 
         fh = open(os.path.join(load_path, fname), "rb")
         values = pickle.load(fh)
@@ -109,5 +110,4 @@ if __name__ == '__main__':
     import sys
     (section_path, atom_output_path, title) = sys.argv[1:4]
     generate(section_path, atom_output_path, title, base_day, today)
-
 
