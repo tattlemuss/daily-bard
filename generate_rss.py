@@ -13,7 +13,10 @@ post_tmpl = """
         <updated>{{postdate}}</updated>
         <id>{{full_url}}</id>
         <content type="html">
-<![CDATA[{{content}}
+<![CDATA[
+{{personae}}
+<hr/>
+{{content}}
         ]]>
         </content>
         </entry>
@@ -91,12 +94,13 @@ def generate(section_path, atom_output_path, playcode, base_day, today):
         # Generate a date N days back
         date_offset = datetime.timedelta(offset - curr)
         final_post_date = today - date_offset
-        values = { "content" : section,
+        post_values = { "content" : section,
+                   "personae" : values['personae'],
                    "author" : "Shakespeare, William",
                    "title" : values['title'],
                    "full_url" : values['url'],
                    "postdate" : rfcformat(final_post_date) }
-        final += expand_template(post_tmpl, values)
+        final += expand_template(post_tmpl, post_values)
         curr -= 1
 
     final += footer_tmpl

@@ -14,20 +14,24 @@ class FormatLine:
         self.score = 0
         self.line_number = ln
         self.is_end = is_end
-        self.character_id = None
+        self.char_id = None
 
 class NormalLine:
     def __init__(self, row):
         self.row = row
         
 class Character:
+    """ ~CharID~,~CharName~,~Abbrev~,~Works~,~Description~,~SpeechCount~ """
     def __init__(self, row):
         self.row = row
+        self.full_name = row[1]
+        self.short_name = row[2]
+        self.description = row[4]
     def key(self):
         return self.row[0]
     def value(self):
-        return self.row[2]
-    
+        return self
+        
 class Para:
     def __init__(self, row):
         self.row = row
@@ -63,6 +67,14 @@ def hash_array(array):
     for row in array:
         res[ row.key() ] = row.value()
     return res
+
+def unique(inputs):
+    h = {}
+    for i in inputs:
+        if i:
+            h[i] = True
+    k = h.keys()
+    return k
     
 def read_into_array(filename, classname):
     array = []
@@ -85,10 +97,29 @@ def generate_site_link(playcode):
 def generate_line_link(playcode, line_id, text):
     return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}#{2}\">{3}</a>".format(OSS_URL, playcode, line_id, text)
     
-def generate_character_link(playcode, character_id, text):
-    return "<a href=\"{0}/views/plays/characters/charlines.php?CharID={1}&WorkID={2}\">{3}</a>".format(OSS_URL, character_id, playcode, text)
+def generate_char_link(playcode, char_id, text):
+    return "<a href=\"{0}/views/plays/characters/charlines.php?CharID={1}&WorkID={2}\">{3}</a>".format(OSS_URL, char_id, playcode, text)
 
+def generate_personae(char_dict, char_ids):
+    """ Generate text for all the characters supplied in the "char_ids" list """
+    unique_ids = unique(char_ids)
+    p = []
+    p.append("In this episode:<br/>")
+    
+    unique_ids.sort()
+    for char_id in unique_ids:
+        ch = char_dict[char_id]
+        if ch.description != '':
+            p.append("<strong>%s</strong>: %s<br/>" % (ch.full_name, ch.description))
+        else:
+            p.append("<strong>%s</strong><br/>" % ch.full_name)
+            
+    return '\n'.join(p)
+    
 def format_play(play_paras, play_acts):
+    """ Build a single play into one big list of formatted lines,
+    which can later be split into sections """
+    
     chapter_dict = hash_array(play_acts)
     formatted_lines = []
 
@@ -123,17 +154,21 @@ def format_play(play_paras, play_acts):
                 # Speech
                 # Look up character name
                 char_id = row.character()
-                char_fullname = char_dict[char_id]
-                char_text = generate_character_link(playcode, char_id, char_fullname)
+                char_fullname = char_dict[char_id].short_name
+                char_text = generate_char_link(playcode, char_id, char_fullname)
 
                 anchor_link = generate_line_link(playcode, ln, "&gt;")
-                formatted_lines.append(FormatLine("<b>{0}</b>: {1}<br/>".format(char_text, anchor_link), ln))
+                f = FormatLine("<b>{0}</b>: {1}<br/>".format(char_text, anchor_link), ln)
+                f.char_id = char_id
+                formatted_lines.append(f)
 
                 # Text
                 dlines = dialog.split('[p]')
                 for d in dlines:
                     d = d.rstrip()
-                    formatted_lines.append(FormatLine("{0}<br/>".format(d), ln, False))
+                    f = FormatLine("{0}<br/>".format(d), ln, False)
+                    f.char_id = char_id
+                    formatted_lines.append(f)
                     ln += 1
 
                 # Mark the last line of dialog as "is_end"
@@ -143,7 +178,7 @@ def format_play(play_paras, play_acts):
             last_scene = scene
     return formatted_lines
 
-def generate_play(our_play, playcode, final_path, oss_path):
+def generate_play(our_play, playcode, char_dict, final_path, oss_path):
     os.makedirs(final_path)
     def is_x(a):
         if a.play() == playcode:
@@ -175,10 +210,16 @@ def generate_play(our_play, playcode, final_path, oss_path):
                 
         end = check
         text = [x.text for x in formatted_lines[base:end]]
+        char_ids = [x.char_id for x in formatted_lines[base:end]]
 
+        # Words...
         final_text = '\n'.join(text)
-        final_text += generate_site_link(playcode)
 
+        personae = generate_personae(char_dict, char_ids)
+        
+        # ... footer (use rss?)
+        final_text += generate_site_link(playcode)
+    
         # Generate pickle data
         line_id = formatted_lines[base].line_number
 
@@ -188,6 +229,7 @@ def generate_play(our_play, playcode, final_path, oss_path):
         page_data = { "playcode" : playcode,
                       "line_id" : line_id,
                       "text" : final_text,
+                      "personae" : personae,
                       "url" : url,
                       "title" : url_title
                       }
@@ -232,5 +274,5 @@ if __name__ == '__main__':
         print playcode
         our_play = play_dict[playcode]
         final_path = os.path.join(output_path, playcode)
-        generate_play(our_play, playcode, final_path, oss_path)
+        generate_play(our_play, playcode, char_dict, final_path, oss_path)
     
