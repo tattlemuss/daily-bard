@@ -68,8 +68,11 @@ def read_into_array(filename, classname):
     array = []
     fh = open(filename, 'rb')
     spamreader = csv.reader(fh, delimiter=',', quotechar='~')
+    add = False
     for row in spamreader:
-        array.append(classname(row))
+        if add:     # skip first row
+            array.append(classname(row))
+        add = True
     fh.close()
     return array
 
@@ -112,7 +115,10 @@ def format_play(play_paras, play_acts):
             if row.character() == 'xxx':
                 # Stage direction
                 # Split into chunks?
-                formatted_lines.append(FormatLine("<br/><center><em>{}</em></center><br/>".format(dialog), ln))
+                formatted_lines.append(FormatLine("<br/>", ln))
+                dlines = dialog.split('[p]')
+                for d in dlines:
+                    formatted_lines.append(FormatLine("<center><em>{}</em></center><br/>".format(d), ln))
             else:
                 # Speech
                 # Look up character name
@@ -137,7 +143,8 @@ def format_play(play_paras, play_acts):
             last_scene = scene
     return formatted_lines
 
-def generate_play(our_play, playcode, output_path, oss_path):
+def generate_play(our_play, playcode, final_path, oss_path):
+    os.makedirs(final_path)
     def is_x(a):
         if a.play() == playcode:
             return True
@@ -146,14 +153,7 @@ def generate_play(our_play, playcode, output_path, oss_path):
     # Filter to 12th Night
     paras_in_play = filter(is_x, paras)
     acts_in_play = filter(is_x, acts)
-
     formatted_lines = format_play(paras_in_play, acts_in_play)
-
-    # Pickle the play details
-    #pickle_filename = "play.play"
-    #pickle_fh = open(os.path.join(output_path, pickle_filename), 'wb')
-    #pickle_dump = pickle.dump(page_data, pickle_fh, 0)
-    #pickle_fh.close()
     
     # Split into chunks of N lines
     # Simplest possible atm
@@ -192,29 +192,45 @@ def generate_play(our_play, playcode, output_path, oss_path):
                       "title" : url_title
                       }
         pickle_filename = "section_%d.sect" % (readable_id)
-        pickle_fh = open(os.path.join(output_path, pickle_filename), 'wb')
+        pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
         pickle_dump = pickle.dump(page_data, pickle_fh, 0)
         pickle_fh.close()
         
         # Move on to next, giving a little overlap
         base = end + 1
         readable_id += 1
+
+    # Pickle the play details
+    play_data = {
+        'playcode' : playcode,
+        'short_title' : our_play.short_title(),
+        'full_title' : our_play.full_title(),
+        'section_count' : readable_id
+        }
+    pickle_filename = "play.play"
+    pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
+    pickle_dump = pickle.dump(play_data, pickle_fh, 0)
+    pickle_fh.close()
             
 if __name__ == '__main__':
     import sys
-    playcode = sys.argv[1]
-    output_path = sys.argv[2]
-    oss_path = sys.argv[3]
+    output_path = sys.argv[1]
+    oss_path = sys.argv[2]
 
     paras = read_into_array(os.path.join(oss_path, 'Paragraphs.txt'), Para)
     chars = read_into_array(os.path.join(oss_path, 'Characters.txt'), Character)
     acts = read_into_array( os.path.join(oss_path, 'Chapters.txt'),   Chapter)
-    plays = read_into_array(os.path.join(oss_path, 'Works.txt'),     Play)
+    plays = read_into_array(os.path.join(oss_path, 'Works.txt'),      Play)
 
     char_dict = hash_array(chars)
     char_dict['xxx'] = ''
 
     play_dict = hash_array(plays)
-    our_play = play_dict[playcode]
-    generate_play(our_play, playcode, output_path, oss_path)
+
+    # Do all plays
+    for playcode in play_dict.keys():
+        print playcode
+        our_play = play_dict[playcode]
+        final_path = os.path.join(output_path, playcode)
+        generate_play(our_play, playcode, final_path, oss_path)
     

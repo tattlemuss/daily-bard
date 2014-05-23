@@ -7,7 +7,7 @@ header_tmpl = """<?xml version="1.0" encoding="utf-8"?>
 post_tmpl = """
         <entry>
         <title>{{title}}</title>
-        <author><name>{{site.author}}</name></author>
+        <author><name>{{author}}</name></author>
         <link href="{{full_url}}"/>
         <published>{{postdate}}</published>
         <updated>{{postdate}}</updated>
@@ -48,33 +48,35 @@ def expand_template(tmpl_text, values):
     output = re.sub(search_re, replace_func, tmpl_text)
     return output
 
-def generate(load_path, output_path, title, base_day, today):
+def generate(section_path, atom_output_path, playcode, base_day, today):
+
+    # Where to load data from
+    load_path = os.path.join(section_path, playcode)
+
     # Work out how far from "today" we are
     td = today - base_day
     day_delta = td.days
-    
-    # Scan the sections directory for number of sections
-    # the play is made from
-    import fnmatch
-    # TODO: just use count
-    all_files = []
-    files = os.listdir(load_path)
-    for f in fnmatch.filter(files, '*.sect'):
-        all_files.append(f)
 
+    # Read play details
+    fh = open(os.path.join(load_path, "play.play"), "rb")
+    play_data = pickle.load(fh)
+    fh.close()
+    
+    section_count   = play_data['section_count']
+    title           = play_data['full_title']
     values = { 
                 "play" : title,
                 "url" : WEBSITE_BASE
             }
+
     final = expand_template(header_tmpl, values)
-    section_count = len(all_files)
     
     # Modulo the day offset
     offset = day_delta % section_count
     curr = offset
 
     # "curr" counts down backwards in time
-    while curr >= 0 and curr > offset - 10:
+    while curr >= 0 and curr > offset - 15:
         readable_id = curr + 1
         fname = "section_%d.sect" % (readable_id)
 
@@ -90,7 +92,7 @@ def generate(load_path, output_path, title, base_day, today):
         date_offset = datetime.timedelta(offset - curr)
         final_post_date = today - date_offset
         values = { "content" : section,
-                   "site.author" : "Shakespeare, William",
+                   "author" : "Shakespeare, William",
                    "title" : values['title'],
                    "full_url" : values['url'],
                    "postdate" : rfcformat(final_post_date) }
@@ -99,7 +101,9 @@ def generate(load_path, output_path, title, base_day, today):
 
     final += footer_tmpl
     
-    fh = open(output_path, 'w')
+    rss_fname = "atom_%s.xml" % playcode
+    final_output_path = os.path.join(atom_output_path, rss_fname)
+    fh = open(final_output_path, 'w')
     fh.write(final)   
     fh.close()
 
@@ -108,6 +112,7 @@ if __name__ == '__main__':
     base_day = datetime.date(2014, 05, 21)
     today = datetime.date.today()
     import sys
-    (section_path, atom_output_path, title) = sys.argv[1:4]
-    generate(section_path, atom_output_path, title, base_day, today)
+
+    (section_path, atom_output_path, playcode) = sys.argv[1:4]
+    generate(section_path, atom_output_path, playcode, base_day, today)
 

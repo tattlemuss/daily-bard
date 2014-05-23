@@ -1,9 +1,5 @@
 #!/bin/sh
-
-for PLAY in "kinglear" "12night"
-do
-    mkdir -p sections/${PLAY}
-    rm sections/${PLAY}/*
-    python generate_sections.py ${PLAY} sections/${PLAY} ../oss
-done
+mkdir -p sections/
+rm -R sections/*
+   python generate_sections.py sections/${PLAY} ../oss
 

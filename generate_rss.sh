@@ -5,5 +5,7 @@ if [${BASE_DIR} -eq '']; then
 fi
 mkdir -p ${BASE_DIR}
 rm ${BASE_DIR}/*.xml
-python generate_rss.py "sections/12night" "${BASE_DIR}/atom_12night.xml" "Twelfth Night"
-python generate_rss.py "sections/kinglear" "${BASE_DIR}/atom_kinglear.xml" "King Lear"
+python generate_rss.py "sections/" ${BASE_DIR} "12night"
+python generate_rss.py "sections/" ${BASE_DIR} "kinglear"
+python generate_rss.py "sections/" ${BASE_DIR} "macbeth"
+
