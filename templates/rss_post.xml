@@ -1,0 +1,15 @@
+        <entry>
+        <title>{{title}}</title>
+        <author><name>{{author}}</name></author>
+        <link href="{{full_url}}"/>
+        <published>{{postdate}}</published>
+        <updated>{{postdate}}</updated>
+        <id>{{full_url}}</id>
+        <content type="html">
+<![CDATA[
+{{personae}}
+<hr/>
+{{content}}
+        ]]>
+        </content>
+        </entry>

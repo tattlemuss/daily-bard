@@ -247,7 +247,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         'playcode' : playcode,
         'short_title' : our_play.short_title(),
         'full_title' : our_play.full_title(),
-        'section_count' : readable_id
+        'section_count' : readable_id - 1
         }
     pickle_filename = "play.play"
     pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
