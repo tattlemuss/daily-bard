@@ -1,12 +1,7 @@
 #!/usr/bin/python
-WEBSITE_BASE="http://www.clarets.org/daily-bard/"
-DEBUG=True
-
-SECTION_PATH="../sections"
-TEMPLATE_PATH="../templates"
-
 import datetime, os
 import pickle
+import daily_bard_settings
 
 def get_module_directory():
     """ Return the full path to this very python file.
@@ -22,24 +17,15 @@ def rfcformat(fmt_date):
     return fmt_date.strftime("%Y-%m-%d") + suffix
     
 def expand_template(tmpl_text, values):
-    """ Simplest template expander.
-    Matches {{TAG}} and replaces with TAG as a key in the
-    supplied values dictionary. """
-    
-    import re
-    search_re = re.compile("{{(.*)}}")
-    def replace_func(matchobj):
-        key = matchobj.group(1)
-        if values.has_key(key):
-            return values[key]
-        return "MISSING"
-    output = re.sub(search_re, replace_func, tmpl_text)
-    return output
+    """ Simplest template expander. """
+    from string import Template
+    tmpl = Template(tmpl_text)
+    return tmpl.substitute(values)
 
 def load_template_file(fname):
     """ Load a template in the TEMPLATE_PATH directory into a string """
     mod_dir = get_module_directory()
-    abs_fname = os.path.join(mod_dir, TEMPLATE_PATH, fname)
+    abs_fname = os.path.join(mod_dir, daily_bard_settings.TEMPLATE_PATH, fname)
     fh = open(abs_fname, "r")
     lines = ''.join(fh.readlines())
     fh.close()
@@ -53,7 +39,7 @@ def expand_template_file(fname, values):
 def get_playcode_load_path(playcode):
     """ Generate the directory path for a given play code """
     mod_dir = get_module_directory()
-    load_path = os.path.join(mod_dir, SECTION_PATH, playcode)
+    load_path = os.path.join(mod_dir, daily_bard_settings.SECTION_PATH, playcode)
     return load_path
 
 def unpickle(fname):
@@ -106,7 +92,7 @@ def generate(playcode, base_day, today):
 
     values = { 
                 "play" : title,
-                "url" : WEBSITE_BASE,
+                "url" : daily_bard_settings.WEBSITE_BASE,
                 "all_posts" : all_posts
                 }
 
@@ -125,7 +111,7 @@ def generate_rss():
             form_date = form.getfirst("start", "")
 
             # alphanumeric only for play
-            if not re.match("[a-z0-9]+$", form_play):
+            if not form_play in daily_bard_settings.ALLOWED_PLAYCODES:
                 return False
             # 8 number only for date. Obviously not exhaustive
             if not re.match("[0-9]{8}$", form_date):
@@ -158,10 +144,9 @@ def generate_frontpage():
     """ Generate the front page with RSS links """
     
     today = datetime.datetime.utcnow().date()
-    playcodes = ['kinglear', '12night']
     
     links = ''
-    for playcode in playcodes:
+    for playcode in daily_bard_settings.ALLOWED_PLAYCODES:
         load_path = get_playcode_load_path(playcode)
         # Read play details
         fh = open(os.path.join(load_path, "play.play"), "rb")

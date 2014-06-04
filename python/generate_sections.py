@@ -7,6 +7,7 @@ import csv
 import sys
 import os
 import pickle
+import daily_bard_settings
 
 class FormatLine:
     def __init__(self, text, ln, is_end=False):
@@ -256,8 +257,8 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
             
 if __name__ == '__main__':
     import sys
-    output_path = sys.argv[1]
-    oss_path = sys.argv[2]
+    output_path = daily_bard_settings.SECTION_PATH
+    oss_path = sys.argv[1]
 
     paras = read_into_array(os.path.join(oss_path, 'Paragraphs.txt'), Para)
     chars = read_into_array(os.path.join(oss_path, 'Characters.txt'), Character)
@@ -270,7 +271,7 @@ if __name__ == '__main__':
     play_dict = hash_array(plays)
 
     # Do all plays
-    for playcode in play_dict.keys():
+    for playcode in daily_bard_settings.ALLOWED_PLAYCODES:
         print playcode
         our_play = play_dict[playcode]
         final_path = os.path.join(output_path, playcode)
