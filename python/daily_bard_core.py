@@ -1,7 +1,7 @@
-#!/usr/bin/python
 import datetime, os
 import pickle
 import daily_bard_settings
+import templating
 
 def get_module_directory():
     """ Return the full path to this very python file.
@@ -16,26 +16,6 @@ def rfcformat(fmt_date):
     suffix = "T00:00:00Z"
     return fmt_date.strftime("%Y-%m-%d") + suffix
     
-def expand_template(tmpl_text, values):
-    """ Simplest template expander. """
-    from string import Template
-    tmpl = Template(tmpl_text)
-    return tmpl.substitute(values)
-
-def load_template_file(fname):
-    """ Load a template in the TEMPLATE_PATH directory into a string """
-    mod_dir = get_module_directory()
-    abs_fname = os.path.join(mod_dir, daily_bard_settings.TEMPLATE_PATH, fname)
-    fh = open(abs_fname, "r")
-    lines = ''.join(fh.readlines())
-    fh.close()
-    return lines
-    
-def expand_template_file(fname, values):
-    """ Expand a template in the TEMPLATE_PATH directory """
-    lines = load_template_file(fname)
-    return expand_template(lines, values)
-
 def get_playcode_load_path(playcode):
     """ Generate the directory path for a given play code """
     mod_dir = get_module_directory()
@@ -63,7 +43,7 @@ def generate(playcode, base_day, today):
     # Modulo the day offset
     offset = day_delta % section_count
     curr = offset
-    post_tmpl = load_template_file('rss_post.xml')
+    post_tmpl = templating.load('rss_post.xml')
     all_posts = ''
 
     # "curr" counts down backwards in time
@@ -87,16 +67,16 @@ def generate(playcode, base_day, today):
                    "title" : episode_title,
                    "full_url" : values['url'],
                    "postdate" : rfcformat(final_post_date) }
-        all_posts += expand_template(post_tmpl, post_values)
+        all_posts += templating.expand(post_tmpl, post_values)
         curr -= 1
 
     values = { 
                 "play" : title,
-                "url" : daily_bard_settings.WEBSITE_BASE,
+                "url" : daily_bard_settings.WEBSITE_BASE_URL,
                 "all_posts" : all_posts
                 }
 
-    final = expand_template_file("rss.xml", values)
+    final = templating.expand_file("rss.xml", values)
     return final
 
 def generate_rss():
@@ -105,7 +85,6 @@ def generate_rss():
     import re
     def parse():
         try:
-
             form = cgi.FieldStorage()
             form_play = form.getfirst("play", "")
             form_date = form.getfirst("start", "")
@@ -131,36 +110,27 @@ def generate_rss():
             return False
         return True
 
-    print "Content-Type: text/html"     # HTML is following
-    print                               # blank line, end of headers
     if not parse():
         print "Failure"
         
-def generate_rss_link(date, playcode, title):
+def generate_rss_link(date, playcode, title, section_count):
     fmt_date = date.strftime("%Y%m%d")
-    return "<li><a href=\"rss.py?play={}&start={}\">{}</a></li>\n".format(playcode, fmt_date, title)
+    return "<li><a href=\"rss.py?play={}&start={}\">{}</a> ({} episodes)</li>\n".format(playcode, fmt_date, title, section_count)
     
-def generate_frontpage():
+def generate_index():
     """ Generate the front page with RSS links """
-    
     today = datetime.datetime.utcnow().date()
-    
     links = ''
     for playcode in daily_bard_settings.ALLOWED_PLAYCODES:
         load_path = get_playcode_load_path(playcode)
+        
         # Read play details
         fh = open(os.path.join(load_path, "play.play"), "rb")
         play_data = pickle.load(fh)
         fh.close()
-        
-        links += generate_rss_link(today, playcode, play_data['short_title'])
+        links += generate_rss_link(today, playcode, play_data['short_title'], play_data['section_count'])
         
     values = { 'rss_links' : links }    
     tmpl_path = "frontpage.html"
-    txt = expand_template_file(tmpl_path, values)
-    
-    print "Content-Type: text/html"     # HTML is following
-    print                               # blank line, end of headers
+    txt = templating.expand_file(tmpl_path, values)    
     print txt
-    
-    

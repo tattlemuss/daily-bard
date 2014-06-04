@@ -1,4 +1,5 @@
 oss/
 sections/
 scripts/oss-textdb.zip
+*.pyc
 *~

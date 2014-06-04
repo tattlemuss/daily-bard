@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!$path_to_python
 
 import cgitb
 cgitb.enable()
 
 import sys
-sys.path.append("../python")
+sys.path.append('$path_to_dailybard')
 
 # Pass through to module code
 import daily_bard_core
-daily_bard_core.generate_frontpage()
+daily_bard_core.$function_call()
