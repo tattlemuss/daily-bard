@@ -53,7 +53,7 @@ def generate(playcode, base_day, today):
     # "curr" counts down backwards in time
     while curr >= 0 and curr > offset - 15:
         readable_id = curr + 1
-        fname = "section_%d.sect" % (readable_id)
+        fname = 'section_%d.sect' % (readable_id)
         values = unpickle(os.path.join(load_path, fname))
         
         section = ''.join(values['text'])
@@ -124,7 +124,7 @@ def generate_rss():
         
 def generate_rss_link(date, playcode, title, section_count):
     fmt_date = date.strftime('%Y%m%d')
-    return "<li><a href=\"rss.py?play={}&start={}\">{}</a> ({} episodes)</li>\n".format(playcode, fmt_date, title, section_count)
+    return '<li><a href="rss.py?play={}&start={}">{}</a> ({} episodes)</li>\n'.format(playcode, fmt_date, title, section_count)
     
 def generate_index():
     """ Generate the front page with RSS links """

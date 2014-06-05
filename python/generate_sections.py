@@ -90,7 +90,7 @@ def read_into_array(filename, classname):
     fh.close()
     return array
 
-OSS_URL="http://www.opensourceshakespeare.org" 
+OSS_URL='http://www.opensourceshakespeare.org' 
 
 def generate_line_link(playcode, line_id, text):
     return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}#{2}\">{3}</a>".format(OSS_URL, playcode, line_id, text)
@@ -106,9 +106,9 @@ def generate_personae(char_dict, char_ids):
     for char_id in unique_ids:
         ch = char_dict[char_id]
         if ch.description != '':
-            p.append("<strong>%s</strong>: %s<br/>" % (ch.full_name, ch.description))
+            p.append('<strong>%s</strong>: %s<br/>' % (ch.full_name, ch.description))
         else:
-            p.append("<strong>%s</strong><br/>" % ch.full_name)
+            p.append('<strong>%s</strong><br/>' % ch.full_name)
     return '\n'.join(p)
     
 def format_play(play_paras, play_acts):
@@ -141,10 +141,10 @@ def format_play(play_paras, play_acts):
             if row.character() == 'xxx':
                 # Stage direction
                 # Split into chunks?
-                formatted_lines.append(FormatLine("<br/>", ln))
+                formatted_lines.append(FormatLine('<br/>', ln))
                 dlines = dialog.split('[p]')
                 for d in dlines:
-                    formatted_lines.append(FormatLine("<center><em>{}</em></center><br/>".format(d), ln))
+                    formatted_lines.append(FormatLine('<center><em>{}</em></center><br/>'.format(d), ln))
             else:
                 # Speech
                 # Look up character name
@@ -152,8 +152,8 @@ def format_play(play_paras, play_acts):
                 char_fullname = char_dict[char_id].short_name
                 char_text = generate_char_link(playcode, char_id, char_fullname)
 
-                anchor_link = generate_line_link(playcode, ln, "&gt;")
-                f = FormatLine("<b>{0}</b>: {1}<br/>".format(char_text, anchor_link), ln)
+                anchor_link = generate_line_link(playcode, ln, '&gt;')
+                f = FormatLine('<b>{0}</b>: {1}<br/>'.format(char_text, anchor_link), ln)
                 f.char_id = char_id
                 formatted_lines.append(f)
 
@@ -161,7 +161,7 @@ def format_play(play_paras, play_acts):
                 dlines = dialog.split('[p]')
                 for d in dlines:
                     d = d.rstrip()
-                    f = FormatLine("{0}<br/>".format(d), ln, False)
+                    f = FormatLine('{0}<br/>'.format(d), ln, False)
                     f.char_id = char_id
                     formatted_lines.append(f)
                     ln += 1
@@ -225,14 +225,14 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         # Generate pickle data
         line_id = formatted_lines[base].line_number
 
-        page_data = { "playcode" : playcode,
-                      "short_title" : our_play.short_title(),
-                      "full_title" : our_play.full_title(),
-                      "line_id" : line_id,
-                      "text" : final_text,
-                      "personae" : personae,
-                      "section_num" : readable_id,
-                      "url" : daily_bard_settings.WEBSITE_BASE_URL
+        page_data = { 'playcode' : playcode,
+                      'short_title' : our_play.short_title(),
+                      'full_title' : our_play.full_title(),
+                      'line_id' : line_id,
+                      'text' : final_text,
+                      'personae' : personae,
+                      'section_num' : readable_id,
+                      'url' : daily_bard_settings.WEBSITE_BASE_URL
                       }
         page_datas.append(page_data)
                 
@@ -248,7 +248,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         'section_count' : section_count
         }
     # Pickle the play details
-    pickle_filename = "play.play"
+    pickle_filename = 'play.play'
     pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
     pickle_dump = pickle.dump(play_data, pickle_fh, 0)
     pickle_fh.close()
@@ -257,13 +257,13 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
     for page_data in page_datas:
         section_id = page_data['section_num']
         page_data['section_total'] = section_count
-        pickle_filename = "section_%d.sect" % section_id
+        pickle_filename = 'section_%d.sect' % section_id
         pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
         pickle_dump = pickle.dump(page_data, pickle_fh, 0)
         pickle_fh.close()
 
         # Create html
-        html_filename = "section_%d.html" % section_id
+        html_filename = 'section_%d.html' % section_id
         html_fh = open(os.path.join(html_base_path, html_filename), 'wb')
         html_fh.write(templating.expand(html_tmpl, page_data))
         html_fh.close()
