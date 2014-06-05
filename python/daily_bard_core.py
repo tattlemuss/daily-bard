@@ -17,8 +17,8 @@ def get_module_directory():
 def rfcformat(fmt_date):
     """ Hack a string matching a convincing date 
     of the format https://tools.ietf.org/html/rfc3339 """
-    suffix = "T00:00:00Z"
-    return fmt_date.strftime("%Y-%m-%d") + suffix
+    suffix = 'T00:00:00Z'
+    return fmt_date.strftime('%Y-%m-%d') + suffix
     
 def get_playcode_load_path(playcode):
     """ Generate the directory path for a given play code """
@@ -27,7 +27,7 @@ def get_playcode_load_path(playcode):
     return load_path
 
 def unpickle(fname):
-    fh = open(fname, "rb")
+    fh = open(fname, 'rb')
     data = pickle.load(fh)
     fh.close()
     return data
@@ -40,7 +40,7 @@ def generate(playcode, base_day, today):
     day_delta = td.days
 
     # Read play details
-    play_data = unpickle(os.path.join(load_path, "play.play"))
+    play_data = unpickle(os.path.join(load_path, 'play.play'))
     section_count   = play_data['section_count']
     title           = play_data['full_title']
     
@@ -63,14 +63,15 @@ def generate(playcode, base_day, today):
         # Generate a date N days back
         date_offset = datetime.timedelta(offset - curr)
         final_post_date = today - date_offset
-        post_values = { "content" : section,
+        post_values = { 
+                   'content' : section,
                    'playcode' : playcode,
                    'line_id' : line_id,
-                   "personae" : values['personae'],
-                   "author" : "Shakespeare, William",
-                   "full_title" : title,
-                   "full_url" : values['url'],
-                   "postdate" : rfcformat(final_post_date),
+                   'personae' : values['personae'],
+                   'author' : 'Shakespeare, William',
+                   'full_title' : title,
+                   'full_url' : values['url'],
+                   'postdate' : rfcformat(final_post_date),
                    'section_num' : readable_id,
                    'section_total' : section_count
                    }
@@ -79,12 +80,12 @@ def generate(playcode, base_day, today):
         curr -= 1
 
     values = { 
-                "play" : title,
-                "url" : daily_bard_settings.WEBSITE_BASE_URL,
-                "all_posts" : all_posts
+                'play' : title,
+                'url' : daily_bard_settings.WEBSITE_BASE_URL,
+                'all_posts' : all_posts
                 }
 
-    final = templating.expand_file("rss.xml", values)
+    final = templating.expand_file('rss.xml', values)
     return final
 
 def generate_rss():
@@ -94,14 +95,14 @@ def generate_rss():
     def parse():
         try:
             form = cgi.FieldStorage()
-            form_play = form.getfirst("play", "")
-            form_date = form.getfirst("start", "")
+            form_play = form.getfirst('play', '')
+            form_date = form.getfirst('start', '')
 
             # alphanumeric only for play
             if not form_play in daily_bard_settings.ALLOWED_PLAYCODES:
                 return False
             # 8 number only for date. Obviously not exhaustive
-            if not re.match("[0-9]{8}$", form_date):
+            if not re.match('[0-9]{8}$', form_date):
                 return False
 
             base_year  = int(form_date[0:4])
@@ -119,10 +120,10 @@ def generate_rss():
         return True
 
     if not parse():
-        print "Failure"
+        print 'Failure'
         
 def generate_rss_link(date, playcode, title, section_count):
-    fmt_date = date.strftime("%Y%m%d")
+    fmt_date = date.strftime('%Y%m%d')
     return "<li><a href=\"rss.py?play={}&start={}\">{}</a> ({} episodes)</li>\n".format(playcode, fmt_date, title, section_count)
     
 def generate_index():
@@ -133,12 +134,12 @@ def generate_index():
         load_path = get_playcode_load_path(playcode)
         
         # Read play details
-        fh = open(os.path.join(load_path, "play.play"), "rb")
+        fh = open(os.path.join(load_path, 'play.play'), 'rb')
         play_data = pickle.load(fh)
         fh.close()
         links += generate_rss_link(today, playcode, play_data['short_title'], play_data['section_count'])
         
     values = { 'rss_links' : links }    
-    tmpl_path = "frontpage.html"
+    tmpl_path = 'frontpage.html'
     txt = templating.expand_file(tmpl_path, values)    
     print txt
