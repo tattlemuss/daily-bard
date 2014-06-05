@@ -3,6 +3,10 @@ import pickle
 import daily_bard_settings
 import templating
 
+if daily_bard_settings.IS_DEBUG:
+    import cgitb
+    cgitb.enable()
+
 def get_module_directory():
     """ Return the full path to this very python file.
         Used to load template/section data"""

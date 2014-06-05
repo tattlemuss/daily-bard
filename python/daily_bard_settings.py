@@ -19,3 +19,5 @@ ALLOWED_PLAYCODES=['kinglear', 'macbeth', '12night']
 # Python executable path for stamping into CGI scripts
 PATH_TO_PYTHON='/usr/bin/python'
     
+# Set to True to allow CGI debug
+IS_DEBUG=False
