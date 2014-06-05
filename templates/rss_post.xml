@@ -1,7 +1,7 @@
         <entry>
         <title>$full_title: Day $section_num of $section_total</title>
         <author><name>$author</name></author>
-        <link href="$full_url"/>
+        <link href="http://www.opensourceshakespeare.com/views/plays/play_view.php?WorkID=$playcode#$line_id"/>
         <published>$postdate</published>
         <updated>$postdate</updated>
         <id>$full_url</id>
