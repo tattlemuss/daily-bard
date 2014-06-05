@@ -55,18 +55,22 @@ def generate(playcode, base_day, today):
         section = ''.join(values['text'])
         line_id = values['line_id']
         playcode = values['playcode']
-
-        episode_title = "%s (%d/%d)" % (title, readable_id, section_count)
         
         # Generate a date N days back
         date_offset = datetime.timedelta(offset - curr)
         final_post_date = today - date_offset
         post_values = { "content" : section,
+                   'playcode' : playcode,
+                   'line_id' : line_id,
                    "personae" : values['personae'],
                    "author" : "Shakespeare, William",
-                   "title" : episode_title,
+                   "full_title" : title,
                    "full_url" : values['url'],
-                   "postdate" : rfcformat(final_post_date) }
+                   "postdate" : rfcformat(final_post_date),
+                   'section_num' : readable_id,
+                   'section_total' : section_count
+                   }
+                   
         all_posts += templating.expand(post_tmpl, post_values)
         curr -= 1
 
