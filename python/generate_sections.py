@@ -8,6 +8,7 @@ import sys
 import os
 import pickle
 import daily_bard_settings
+import templating
 
 class FormatLine:
     def __init__(self, text, ln, is_end=False):
@@ -91,10 +92,6 @@ def read_into_array(filename, classname):
 
 OSS_URL="http://www.opensourceshakespeare.org" 
 
-def generate_site_link(playcode):
-    text = "Text from Open Source Shakespeare";
-    return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}\">{2}</a>".format(OSS_URL, playcode, text)
-
 def generate_line_link(playcode, line_id, text):
     return "<a href=\"{0}/views/plays/play_view.php?WorkID={1}#{2}\">{3}</a>".format(OSS_URL, playcode, line_id, text)
     
@@ -105,8 +102,6 @@ def generate_personae(char_dict, char_ids):
     """ Generate text for all the characters supplied in the "char_ids" list """
     unique_ids = unique(char_ids)
     p = []
-    p.append("In this episode:<br/>")
-    
     unique_ids.sort()
     for char_id in unique_ids:
         ch = char_dict[char_id]
@@ -114,7 +109,6 @@ def generate_personae(char_dict, char_ids):
             p.append("<strong>%s</strong>: %s<br/>" % (ch.full_name, ch.description))
         else:
             p.append("<strong>%s</strong><br/>" % ch.full_name)
-            
     return '\n'.join(p)
     
 def format_play(play_paras, play_acts):
@@ -180,7 +174,14 @@ def format_play(play_paras, play_acts):
     return formatted_lines
 
 def generate_play(our_play, playcode, char_dict, final_path, oss_path):
+    html_base_path = os.path.join(daily_bard_settings.CGI_PATH, playcode)
+
     os.makedirs(final_path)
+    try:
+        os.makedirs(html_base_path)
+    except:
+        pass
+
     def is_x(a):
         if a.play() == playcode:
             return True
@@ -200,6 +201,9 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
     play_title = our_play.short_title()
     section_count = len(formatted_lines) / chunk_size
     line_count = len(formatted_lines)
+    html_tmpl = templating.load('html_section.html')
+    page_datas = []
+
     while base < line_count:
         # Scan down to find next "end"
         check = base + chunk_size
@@ -218,43 +222,52 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
 
         personae = generate_personae(char_dict, char_ids)
         
-        # ... footer (use rss?)
-        final_text += generate_site_link(playcode)
-    
         # Generate pickle data
         line_id = formatted_lines[base].line_number
 
-        url = "http://www.opensourceshakespeare.org/views/plays/play_view.php?WorkID=%s#%d" % (playcode, line_id)
-        url_title = "%s (%d/%d)" % (play_title, readable_id, section_count)
-        
         page_data = { "playcode" : playcode,
+                      "short_title" : our_play.short_title(),
+                      "full_title" : our_play.full_title(),
                       "line_id" : line_id,
                       "text" : final_text,
                       "personae" : personae,
-                      "url" : url,
-                      "title" : url_title
+                      "section_num" : readable_id,
+                      "url" : daily_bard_settings.WEBSITE_BASE_URL
                       }
-        pickle_filename = "section_%d.sect" % (readable_id)
-        pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
-        pickle_dump = pickle.dump(page_data, pickle_fh, 0)
-        pickle_fh.close()
-        
+        page_datas.append(page_data)
+                
         # Move on to next, giving a little overlap
         base = end + 1
         readable_id += 1
 
-    # Pickle the play details
+    section_count = readable_id - 1
     play_data = {
         'playcode' : playcode,
         'short_title' : our_play.short_title(),
         'full_title' : our_play.full_title(),
-        'section_count' : readable_id - 1
+        'section_count' : section_count
         }
+    # Pickle the play details
     pickle_filename = "play.play"
     pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
     pickle_dump = pickle.dump(play_data, pickle_fh, 0)
     pickle_fh.close()
-            
+
+    # Pickle each page
+    for page_data in page_datas:
+        section_id = page_data['section_num']
+        page_data['section_total'] = section_count
+        pickle_filename = "section_%d.sect" % section_id
+        pickle_fh = open(os.path.join(final_path, pickle_filename), 'wb')
+        pickle_dump = pickle.dump(page_data, pickle_fh, 0)
+        pickle_fh.close()
+
+        # Create html
+        html_filename = "section_%d.html" % section_id
+        html_fh = open(os.path.join(html_base_path, html_filename), 'wb')
+        html_fh.write(templating.expand(html_tmpl, page_data))
+        html_fh.close()
+
 if __name__ == '__main__':
     import sys
     output_path = daily_bard_settings.SECTION_PATH

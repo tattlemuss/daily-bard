@@ -1,5 +1,5 @@
         <entry>
-        <title>$title</title>
+        <title>$full_title: Day $section_num of $section_total</title>
         <author><name>$author</name></author>
         <link href="$full_url"/>
         <published>$postdate</published>
@@ -7,9 +7,11 @@
         <id>$full_url</id>
         <content type="html">
 <![CDATA[
+<h3>Characters in this section</h3>
 $personae
 <hr/>
 $content
+<p>Text from <a href="http://www.opensourceshakespeare.com/views/plays/play_view.php?WorkID=$playcode#$line_id">Open Source Shakespeare</a></p>
         ]]>
         </content>
         </entry>
