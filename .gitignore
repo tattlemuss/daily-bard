@@ -1,4 +1,6 @@
+cgiscripts/
 oss/
+public_html/
 sections/
 scripts/oss-textdb.zip
 *.pyc

@@ -9,6 +9,9 @@ SECTION_PATH='../sections'
 # Relative path where template files live
 TEMPLATE_PATH='../templates'
 
+# Relative path to put generated HTML pages
+PUBLIC_HTML_PATH='../public_html'
+
 # Output path to copy cgi scripts into
 CGI_PATH='../cgiscripts'
 
