@@ -4,5 +4,7 @@
 curl http://opensourceshakespeare.com/downloads/oss-textdb.zip > oss-textdb.zip
 
 # Extract
-unzip oss-textdb.zip -d ../oss
+unzip -o oss-textdb.zip -d ../oss
+
+rm oss-textdb.zip
 
