@@ -57,7 +57,7 @@ ALLOWED_PLAYCODES=[
     'winterstale']
 
 # Python executable path for stamping into CGI scripts
-PATH_TO_PYTHON='/usr/bin/python'
+PATH_TO_PYTHON='/usr/bin/env python'
     
 # Set to True to allow CGI debug
 IS_DEBUG=False
