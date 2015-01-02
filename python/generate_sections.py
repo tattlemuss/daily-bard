@@ -249,8 +249,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
     page_datas = []
     
     def format_row(x):
-        col = '{}'.format(x.score)        
-        return '{} {}<br/>'.format(col, x.text)
+        return '   {}<br/>'.format(x.text)
         
     while base < line_count:
         # Choose the best endpoint
