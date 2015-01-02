@@ -1,0 +1,4 @@
+# This .htaccess file is for use with Apache. It means that if you have to
+# put your copy of this codebase in web-visible areas, the code and settings
+# aren't simply visible to people poking in that directory.
+deny from all

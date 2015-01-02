@@ -1,0 +1,9 @@
+# This .htaccess file is for use with Apache and makes it easier to set up
+
+# Set the default index page for the directory to index.py
+DirectoryIndex index.py
+
+# Allow .py extensions to be treated as cgi scripts so that they are runnable.
+AddType cgi .py
+AddHandler cgi-script cgi py
+
