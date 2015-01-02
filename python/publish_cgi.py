@@ -30,20 +30,22 @@ def load_template_file(fname):
     fh.close()
     return lines
 
-def publish_cgi(output_fname, function_call):
+def publish_cgi(output_path, output_fname, function_call):
     l = load_template_file("front_cgi.txt")
     values = { 'path_to_python'    : daily_bard_settings.PATH_TO_PYTHON,
                'path_to_dailybard' : get_module_directory(),
                'function_call'     : function_call}
     tmpl = expand_template(l, values)
-    full_fname = os.path.join(daily_bard_settings.CGI_PATH, output_fname)
+    full_fname = os.path.join(output_path, output_fname)
     fh = open(full_fname, 'w')
     fh.write(tmpl)
     fh.close()
     #os.chmod(full_fname, stat.S_IXUSR)
     
 if __name__ == '__main__':
-    publish_cgi('index.py', 'generate_index')
-    publish_cgi('rss.py',   'generate_rss')
+    import sys
+    output_path = sys.argv[1]
+    publish_cgi(output_path, 'index.py', 'generate_index')
+    publish_cgi(output_path, 'rss.py',   'generate_rss')
          
     

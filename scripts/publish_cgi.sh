@@ -1,3 +1,3 @@
 #!/bin/sh
-python ../python/publish_cgi.py
+python ../python/publish_cgi.py $1
 

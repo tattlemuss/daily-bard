@@ -52,7 +52,7 @@ def generate(playcode, base_day, today):
 
     # "curr" counts down backwards in time
     while curr >= 0 and curr > offset - 15:
-        readable_id = curr + 1
+        readable_id = curr
         fname = 'section_%d.sect' % (readable_id)
         values = unpickle(os.path.join(load_path, fname))
         
@@ -73,6 +73,7 @@ def generate(playcode, base_day, today):
                    'full_url' : values['url'],
                    'postdate' : rfcformat(final_post_date),
                    'section_num' : readable_id,
+                   'day_num' : readable_id + 1,
                    'section_total' : section_count
                    }
                    

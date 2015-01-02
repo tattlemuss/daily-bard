@@ -239,7 +239,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
     # Split into chunks of N lines
     # Simplest possible atm
     base = 0
-    readable_id = 1
+    readable_id = 0
     chunk_size = 50
     chunk_overlap = 100
     play_title = our_play.short_title()
@@ -267,7 +267,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         
         end = best_entry + 1
         
-        print end, line_count
+        #print end, line_count
         text = [format_row(x) for x in lines[base:end]]
         char_ids = [x.char_id for x in lines[base:end]]
 
@@ -294,6 +294,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         base = end
         readable_id += 1
 
+    # The section IDs now go from 0 to n-1
     section_count = readable_id
     play_data = {
         'playcode' : playcode,
@@ -317,10 +318,10 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         pickle_fh.close()
 
         # Create html
-        html_filename = 'section_%d.html' % section_id
-        html_fh = open(os.path.join(html_base_path, html_filename), 'wb')
-        html_fh.write(templating.expand(html_tmpl, page_data))
-        html_fh.close()
+        #html_filename = 'section_%d.html' % section_id
+        #html_fh = open(os.path.join(html_base_path, html_filename), 'wb')
+        #html_fh.write(templating.expand(html_tmpl, page_data))
+        #html_fh.close()
 
 if __name__ == '__main__':
     import sys
