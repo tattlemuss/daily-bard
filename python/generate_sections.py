@@ -294,7 +294,7 @@ def generate_play(our_play, playcode, char_dict, final_path, oss_path):
         base = end
         readable_id += 1
 
-    section_count = readable_id - 1
+    section_count = readable_id
     play_data = {
         'playcode' : playcode,
         'short_title' : our_play.short_title(),
