@@ -38,6 +38,7 @@ def generate(playcode, base_day, today):
     # Work out how far from "today" we are
     td = today - base_day
     day_delta = td.days
+    updated = rfcformat(today)
 
     # Read play details
     play_data = unpickle(os.path.join(load_path, 'play.play'))
@@ -87,6 +88,7 @@ def generate(playcode, base_day, today):
         all_posts += templating.expand(post_tmpl, post_values)
 
     values = { 
+                'updateddate' : updated,
                 'play' : title,
                 'url' : daily_bard_settings.WEBSITE_BASE_URL,
                 'all_posts' : all_posts

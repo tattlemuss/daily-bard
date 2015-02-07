@@ -2,9 +2,9 @@ Content-Type: text/xml
 
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
+ <updated>$updateddate</updated>
  <title>The Daily Bard: $play</title>
-    <link>$url</link>
-    <description>Daily updates from Shakespeare plays.</description>
+    <link href="$url"/>
     <id>$url</id>
     $all_posts
 </feed>
