@@ -44,15 +44,21 @@ def generate(playcode, base_day, today):
     section_count   = play_data['section_count']
     title           = play_data['full_title']
     
-    # Modulo the day offset
-    offset = day_delta % section_count
-    curr = offset
     post_tmpl = templating.load('rss_post.xml')
     all_posts = ''
 
-    # "curr" counts down backwards in time
-    while curr >= 0 and curr > offset - 15:
-        readable_id = curr
+    # Loop back 30 days, wrapping round if necessary
+    for sub in range(0, 30):
+        final_day_offset = day_delta - sub
+
+        # Cull out-of-range entries
+        if (final_day_offset < 0):
+            continue
+        if (final_day_offset >= section_count):
+            continue
+
+        # Modulo the day offset
+        readable_id = final_day_offset
         fname = 'section_%d.sect' % (readable_id)
         values = unpickle(os.path.join(load_path, fname))
         
@@ -60,9 +66,9 @@ def generate(playcode, base_day, today):
         line_id = values['line_id']
         playcode = values['playcode']
         
-        # Generate a date N days back
-        date_offset = datetime.timedelta(offset - curr)
-        final_post_date = today - date_offset
+        # Generate a date N days from the base
+        date_offset = datetime.timedelta(final_day_offset)
+        final_post_date = base_day + date_offset
         post_values = { 
                    'content' : section,
                    'playcode' : playcode,
@@ -72,13 +78,13 @@ def generate(playcode, base_day, today):
                    'full_title' : title,
                    'full_url' : values['url'],
                    'postdate' : rfcformat(final_post_date),
+                   'unique_id' : final_day_offset,
                    'section_num' : readable_id,
                    'day_num' : readable_id + 1,
                    'section_total' : section_count
                    }
                    
         all_posts += templating.expand(post_tmpl, post_values)
-        curr -= 1
 
     values = { 
                 'play' : title,
@@ -116,13 +122,15 @@ def generate_rss():
             print final
         except:
             # Swallow any error
-            raise
             return False
         return True
 
     if not parse():
-        print 'Failure'
-        
+        # Show empty page in failure case
+        print "Content-Type: text/xml"
+        print
+        print "<?xml version=\"1.0\" encoding=\"utf-8\"?><feed/>"
+
 def generate_rss_link(date, playcode, title, section_count):
     fmt_date = date.strftime('%Y%m%d')
     return '<li><a href="rss.py?play={}&start={}">{}</a> ({} episodes)</li>\n'.format(playcode, fmt_date, title, section_count)

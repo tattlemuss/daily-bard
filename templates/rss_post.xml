@@ -4,7 +4,7 @@
         <link href="http://www.opensourceshakespeare.com/views/plays/play_view.php?WorkID=$playcode#$line_id"/>
         <published>$postdate</published>
         <updated>$postdate</updated>
-        <id>$full_url/daily-bard/$playcode/$day_num</id>
+        <id>$full_url:daily-bard/$playcode/$unique_id</id>
         <content type="html">
 <![CDATA[
 <h3>Characters in this section</h3>
